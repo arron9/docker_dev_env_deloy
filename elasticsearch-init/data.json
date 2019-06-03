@@ -1,0 +1,94 @@
+{
+	"mappings" : {
+		"category" : {
+			"properties" : {
+				"description" : {
+					"type" : "text",
+					"analyzer" : "ik_max_word"
+				},
+				"image" : {
+					"type" : "text",
+					"analyzer" : "ik_max_word"
+				},
+				"name" : {
+					"type" : "text",
+					"analyzer" : "full_prefix_analyzer"
+				},
+				"status" : {
+					"type" : "integer"
+				}
+			}
+		}
+	},	
+	"settings" : {
+		"analysis":{
+			"filter":{
+				"autocomplete_filter":{
+					"type":"edge_ngram",
+						"min_gram" : 1,
+						"max_gram" : 15
+				},
+				"pinyin_first_letter_and_full_pinyin_filter" : {
+					"type" : "pinyin",
+					"keep_first_letter" : true,
+					"keep_full_pinyin" : false,
+					"keep_joined_full_pinyin" : true,
+					"keep_none_chinese" : false,
+					"keep_original" : false,
+					"limit_first_letter_length" : 16,
+					"lowercase" : true,
+					"trim_whitespace" : true,
+					"keep_none_chinese_in_first_letter" : true
+				},
+				"full_pinyin_filter" : {
+					"type" : "pinyin",
+					"keep_first_letter" : true,
+					"keep_full_pinyin" : false,
+					"keep_joined_full_pinyin" : true,
+					"keep_none_chinese" : false,
+					"keep_original" : true,
+					"limit_first_letter_length" : 16,
+					"lowercase" : true,
+					"trim_whitespace" : true,
+					"keep_none_chinese_in_first_letter" : true
+				}
+			},
+			"analyzer":{
+				"full_prefix_analyzer":{
+					"type":"custom",
+						"char_filter" : [
+						"html_strip"
+						],
+					"tokenizer" : "keyword",
+						"filter" : [
+							"lowercase",
+							"full_pinyin_filter",
+							"autocomplete_filter"
+						]
+					},
+					"chinese_analyzer":{
+						"type":"custom",
+						"char_filter" : [
+							"html_strip"
+						],
+						"tokenizer" : "keyword",
+						"filter" : [
+							"lowercase",
+							"autocomplete_filter"
+						]
+					},
+					"pinyin_analyzer":{
+						"type":"custom",
+						"char_filter" : [
+							"html_strip"
+						],
+						"tokenizer" : "keyword",
+						"filter" : [
+							"pinyin_first_letter_and_full_pinyin_filter",
+							"autocomplete_filter"
+						]
+					}
+				}
+			}
+		}
+}
