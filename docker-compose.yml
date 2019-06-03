@@ -1,0 +1,82 @@
+version: '2.1'
+
+services:
+  db:
+    image: mysql:5.7
+    restart: 'no'
+    volumes:
+      - ${PWD}/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+      - ${PWD}/docs/sql/sql-init/:/docker-entrypoint-initdb.d/:ro
+    entrypoint:
+      - 'docker-entrypoint.sh'
+      - '--character-set-server=utf8mb4'
+    environment:
+      MYSQL_USER: "root"
+      MYSQL_PASSWORD: "123456"
+      MYSQL_ROOT_PASSWORD: "123456"
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:5.0
+    restart: 'no'
+    ports:
+      - "6379:6379"
+
+  elasticsearch:
+    build: elasticsearch-cn
+    restart: 'no'
+    ports:
+      - "9999:9200"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    links:
+      - db:db
+    ports:
+      - 8000:80
+    environment:
+      MYSQL_USER: user
+      MYSQL_PASSWORD: test
+      MYSQL_ROOT_PASSWORD: test
+    volumes:
+      - ${PWD}/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php
+
+  mongo:
+    image: mongo:4.0.6
+    restart: 'no'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+      - MONGO_INITDB_DATABASE=db1
+      - MONGO_PORT=27017
+      - MONGO_ROOT_USER=root
+      - MONGO_ROOT_PASS=root
+      - APP_MONGO_HOST=localhost
+      - APP_MONGO_USER=root
+      - APP_MONGO_PASS=root
+      - APP_MONGO_DB=db1
+    volumes:
+      - "${PWD}/docs/mongodb/mongodb-init/:/docker-entrypoint-initdb.d/:ro"
+    ports:
+      - "27017:27017"
+
+  elasticsearch-init:
+    build: elasticsearch-init
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:6.5.2
+    volumes:
+      - ${PWD}/logstash/pipeline:/usr/share/logstash/pipeline/
+      - ${PWD}/logstash/mysql-connector-java-5.1.47-bin.jar:/usr/share/logstash/mysql-connector-java-5.1.47-bin.jar:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
